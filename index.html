@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<pre>
+    <script>
+        function lk(args) {
+            document.writeln(args)
+        }
+
+        var identity = function identity(x) {
+            return x;
+        }
+        lk(identity(8))
+
+        var add = function add(a, b) {
+            return a + (b || a);
+        }
+        var sub = function sub(a, b) {
+            return a - (b || a);
+        }
+        var mul = function mul(a, b) {
+            return a * (b || a);
+        }
+
+
+        lk('identityf')
+        var identityf = function identityf(x) {
+            return function () {
+                return x;
+            }
+        }
+
+        lk(identityf(1)())
+
+
+        var addf = function addf(x) {
+            return function (y) {
+                return x + y;
+            }
+        }
+
+        lk('liftf')
+        var liftf = function liftf(func) {
+            return function (x) {
+                return function (y) {
+                    return func(x)(y)
+                }
+            }
+        }
+
+        lk(liftf(addf)(3)(4));
+
+        lk('curry')
+        var curry = function curry(binary, x) {
+            return function (y) {
+                return binary(x, y);
+            }
+        }
+        lk(curry(add, 3)(4));
+
+        lk('3 incs')
+        var inc1 = function inc1(x) {
+            return add(x, 1)
+        }
+
+        var inc2 = function inc2(x) {
+            return addf(x)(1);
+        }
+
+        var inc3 = function inc3(x) {
+            return liftf(add)(x)(1);
+        }
+
+        lk('twice')
+        var twice = function twice(binary) {
+            return function (x) {
+                return binary(x, x)
+            }
+        }
+        var doubl = twice(add)
+        var square = twice(mul)
+        lk(doubl(11))
+        lk(square(11))
+
+        lk('reverse')
+        var reverse = function reverse(binary) {
+            return function (x, y) {
+                return binary(y, x);
+            }
+        }
+
+        lk('composeu')
+        var composeu = function composeu(bin, arry) {
+            return function (x) {
+                return arry(bin(x));
+            }
+        }
+
+        lk(composeu(doubl, square)(5));
+
+        lk('composeb')
+        var composeb = function composeb(f, g) {
+            return function (x, y, z) {
+                return g(f(x, y), z);
+            }
+        }
+
+        lk(composeb(add, mul)(2, 3, 7));
+
+        lk('limit')
+        var limit = function limit(func, counter) {
+
+            return function (x, y) {
+                if (counter-- <= 0) return undefined;
+                return func(x, y);
+            }
+        }
+        var add_ltd = limit(add, 1);
+        lk(add_ltd(3, 4));
+        lk(add_ltd(3, 5));
+
+        lk('from')
+        var from = function from(start) {
+            return function () {
+                var next = start;
+                start += 1;
+                return next;
+
+            }
+        }
+        var index = from(10);
+
+        lk(index());
+        lk(index());
+        lk(index());
+
+        lk('to')
+        var to = function to(gen, to) {
+            return function () {
+
+                var res = gen();
+                if (res >= to) return undefined;
+                return res;
+            }
+        }
+        var index_to = to(from(11), 13);
+        lk(index_to());
+        lk(index_to());
+        lk(index_to());
+
+        lk('fromTo')
+        var fromTo = function fromTo(start, end) {
+
+
+            return to(from(start), end)
+
+
+        }
+        var index_fromTo = fromTo(1, 10);
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+        lk(index_fromTo());
+
+        lk('element')
+        var element = function element(arr, gen) {
+
+            return function () {
+                if (!gen) gen = fromTo(0, arr.length)
+                var res = gen();
+                return arr[res];
+            }
+
+        }
+
+        var ele = element(['a', 'b', 'c', 'd'], fromTo(0, 2));
+
+        lk(ele());
+        lk(ele());
+        lk(ele());
+
+        lk('collect')
+        var collect = function collect(gen, array) {
+            return function () {
+                var res = gen();
+                if (res) array.push(res);
+                return res;
+            }
+        }
+        var array = [];
+        var col = collect(fromTo(0, 2), array);
+        col();
+        col();
+        col();
+        lk(array);
+
+        lk('filter')
+        var filter = function filter(gen, predicate) {
+            return function () {
+
+                while ((res = gen()) !== undefined) {
+                    var isValid = predicate(res);
+                    if (isValid) return res;
+                }
+
+            }
+        }
+
+        var fil = filter(fromTo(0, 5), function third(value) {
+            return (value % 3 === 0)
+        })
+
+        lk(fil());
+        lk(fil());
+        lk(fil());
+
+        lk('concat')
+        var concat = function concat(f, g) {
+            return function () {
+                var res = f();
+                if (res === undefined) return g();
+                return res;
+            }
+        }
+
+        var con = concat(fromTo(0, 3), fromTo(0, 2))
+        lk(con());
+        lk(con());
+        lk(con());
+        lk(con());
+        lk(con());
+        lk(con());
+        lk(con());
+        lk(con());
+
+        lk('gensymf')
+        var gensymf = function gensymf(sym) {
+            var start = 0;
+            return function () {
+                var next = start;
+                start += 1;
+                return sym.concat(next)
+            }
+        }
+        var geng = gensymf('G')
+        lk(geng())
+        lk(geng())
+        lk(geng())
+        lk(geng())
+        var genH = gensymf('H')
+        lk(genH())
+        lk(genH())
+        lk(genH())
+        lk(genH())
+
+        lk('gensymff')
+        var gensymff = function gensymff(func, seed) {
+            return function (sym) {
+                var start = seed;
+                return function () {
+                    var next = func(start);
+                    start = func(start);
+                    return sym.concat(next)
+                }
+            }
+        }
+
+        lk('fibonacif')
+        var fibonacif = function fibonacif(x, y) {
+            return function () {
+                var next = x;
+                x = y;
+                y = x + next;
+                return next;
+            }
+        }
+        var fibonaci = fibonacif(0, 1);
+        lk(fibonaci());
+        lk(fibonaci());
+        lk(fibonaci());
+        lk(fibonaci());
+        lk(fibonaci());
+        lk(fibonaci());
+        lk(fibonaci());
+
+        lk('counter')
+        var counter = function counter(x) {
+            return {
+                up: function () {
+                    return ++x;
+                }
+                ,
+                down: function () {
+                    return --x;
+                }
+            }
+        }
+
+        var object = counter(10), up = object.up, down = object.down;
+        lk(up())
+        lk(down())
+        lk(down())
+        lk(up())
+
+        lk('revocable')
+        var revocable = function revocable(func) {
+            return {
+                invoke: function (x, y) {
+                    return func(x, y);
+                },
+                revoke: function () {
+                    func = function () {
+                        return undefined;
+                    }
+                }
+            }
+        }
+
+        var rev = revocable(add);
+        add_rev = rev.invoke;
+        lk(add_rev(3, 4));
+        rev.revoke();
+        lk(add_rev(3, 4));
+
+        lk('m')
+        var m = function m(value, source) {
+            return {
+                value: value,
+                source: source || String(value)
+            }
+        }
+        lk(JSON.stringify(m(1)));
+        lk(JSON.stringify(m(Math.PI, 'pi')));
+
+        lk('addm');
+        var addm = function addm(f, g) {
+            return m(f.value + g.value, f.source.concat('+').concat(g.source))
+        }
+
+        lk(JSON.stringify(addm(m(3), m(4))));
+        lk(JSON.stringify(addm(m(1), m(Math.PI, 'pi'))));
+
+        lk('liftm')
+        var liftm = function liftm(binary, str) {
+            return function (f, g) {
+                var x = f.value;
+                var y = g.value;
+                var z = binary(x, y);
+                return m(z, String(x).concat(str).concat(y));
+            }
+        }
+
+        var addm = liftm(add, '+');
+        lk(JSON.stringify(addm(m(3), m(4))));
+        lk(JSON.stringify(liftm(mul, '*')(m(3), m(4))));
+
+        lk('liftmn')
+        var liftmn = function liftmn() {
+            return function (arg1, arg2) {
+                if (typeof arg1 === 'number') arg1 = m(arg1)
+                if (typeof arg2 === 'number') arg2 = m(arg2)
+                var x = arg1.value;
+                var y = arg2.value;
+                var z = binary(x, y);
+                return m(z, String(x).concat(str).concat(y));
+            }
+        }
+
+        lk('exp')
+        var exp = function exp(arg) {
+            if (Object.prototype.toString.call(arg) === '[object Array]')
+                return arg[0](arg[1], arg[2]);
+            return arg
+
+        }
+
+        var sae = [mul, 5, 11];
+        lk(exp(sae));
+        lk(exp(42));
+
+        lk('exp_plus')
+        var exp_plus = function exp_plus(arg) {
+            if (Object.prototype.toString.call(arg) === '[object Array]')
+                return arg[0](exp(arg[1]), exp(arg[2]));
+            return arg
+        }
+
+        var nae = [Math.sqrt,
+            [add,
+                [square, 3],
+                [square, 4]
+            ]
+        ]
+        lk(exp(nae))
+
+        lk('addg')
+
+        var addg = function addg(x) {
+            function more(y) {
+                if (y === undefined) return x;
+                x += y;
+                return more;
+            }
+
+            if (x === undefined) return 0;
+            return more
+        }
+        lk(addg(8)(7)(6)(5)())
+
+        lk('liftg')
+        var liftg = function liftg(func) {
+            return function (x) {
+                function more(y) {
+                    if (y === undefined) return x;
+                    x = func(x, y);
+                    return more
+                }
+
+                if (x === undefined) return 0;
+                return more;
+            }
+        }
+
+        lk(liftg(mul)(3)(4)(3)(0)())
+
+        lk('arrayg')
+        var arrayg = function arrayg(x) {
+            var arr = [];
+
+
+            function more(y) {
+                if (y === undefined) return arr;
+                arr.push(y);
+                return more;
+            }
+
+            if (x === undefined) return arr;
+            arr.push(x);
+            return more
+
+        }
+
+        lk(arrayg(3)(4)(5)());
+
+        lk('continuize')
+        var continuize = function continuize(unary) {
+            return function (func, val) {
+                return func(unary(val));
+            }
+        }
+
+        var sqrtc = continuize(Math.sqrt);
+        sqrtc(lk, 81);
+
+        lk('vector')
+        var vector = function vector() {
+            var arr = [];
+            var get = function get(x) {
+                return arr[x]
+            }
+
+            var store = function store(x, y) {
+                arr[x] = y
+            }
+
+            var append = function append(x) {
+                arr.push(x)
+            }
+
+            var obj = {};
+            obj.get = get;
+            obj.store = store;
+            obj.append = append;
+
+            return obj;
+        }
+
+        var myVector = vector();
+        myVector.append(7);
+        myVector.store(1, 8);
+
+        lk(myVector.get(0));
+        lk(myVector.get(1));
+
+        var stash = [];
+        myVector.store('push', (function () {
+            stash = this;
+        }));
+        myVector.append()// now stach is the array
+
+        lk('pubsub')
+        var pubsub = function pubsub() {
+            var arr = [];
+            var subscribe = function subscribe(func) {
+                arr.push(func);
+
+            }
+            var publish = function publish(arg) {
+                arr.forEach(function (t) {
+                    setTimeout(function () {
+                        t(arg)
+                    }, 0)
+                })
+
+            }
+            return Object.freeze({
+                    subscribe: subscribe,
+                    publish: publish
+                }
+            )
+        }
+        var my_pubsub = pubsub();
+        my_pubsub.subscribe(lk);
+        my_pubsub.publish('it works!');
+        my_pubsub.subscribe = undefined;
+    </script>
+</pre>
+</body>
+</html>
